@@ -1,0 +1,9 @@
+{
+  "Views": {
+    "Home": "./Views/home.html",
+    "Customer": {
+      "SignIn": "./Views/cusSignIn.html",
+      "SignUp": "./Views/cusSignUp.html"
+    }
+  }
+}
