@@ -28,8 +28,8 @@ namespace WebSite.Services
 
         public bool ValidateCustomer(Customer customer)
         {
-            return customer != null && customer.Email != "" & customer.Password != "" & customer.Address != "" &
-                customer.Phone != "" & customer.Name != "" & customer.LastName != "" & customer.DeliveryType != "";
+            return customer != null && customer.Email != "" & customer.Password != "" &
+                customer.Phone != "" & customer.Name != "" & customer.LastName != "";
         }
     }
 }

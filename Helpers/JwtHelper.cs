@@ -17,9 +17,10 @@ namespace WebSite.Helpers
         {
 			var handler = new JwtSecurityTokenHandler();
 
-            if (authorization != StringValues.Empty)
+            if (!StringValues.IsNullOrEmpty(authorization))
             {
-				var token = handler.ReadJwtToken(authorization.ToString().Split(' ')[1]);
+                var jwt = authorization.ToString().Replace("\"", "").Split(' ')[1];
+				var token = handler.ReadJwtToken(jwt);
 				return new JwtHelper(token);
 			}
 

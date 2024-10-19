@@ -9,8 +9,8 @@ body {
 .mask {
     background-color: #436A97;
     width: 1000px;
-    height: 600px;
     margin: 8% auto;
+    padding-bottom: 50px;
     border-radius: 30px;
     padding-top: 50px;
     text-align: center;

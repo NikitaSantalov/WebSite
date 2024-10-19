@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Primitives;
 using Microsoft.IdentityModel.Tokens;
 using WebSite.Extensions;
 using WebSite.Helpers;
@@ -60,12 +61,25 @@ namespace WebSite.Controllers
 		[Route("sign-in")]
 		public IResult SignIn([FromBody] UserDto user)
 		{
-			if (!_validationService.ValidateUser(user))
+			Customer? customer = null;
+
+			var authorization = HttpContext.Request.Headers.Authorization;
+
+			if (!StringValues.IsNullOrEmpty(authorization))
+			{
+				var helper = JwtHelper.GetJwt(authorization);
+				int id = int.Parse(helper.GetValue("Id"));
+
+				customer = _customerRepo.Get(id);
+			}
+			else if (!_validationService.ValidateUser(user))
 			{
 				return Results.BadRequest();
 			}
-
-			var customer = _customerRepo.Where(c => c.Email == user.Email & c.Password == user.Password).FirstOrDefault();
+			else
+			{
+				customer = _customerRepo.Where(c => c.Email == user.Email & c.Password == user.Password).FirstOrDefault();
+			}
 
 			if (customer == null)
 			{

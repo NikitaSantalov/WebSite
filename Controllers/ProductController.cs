@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
@@ -37,9 +36,9 @@ namespace WebSite.Controllers
 		public IResult Get(string name = "", string category = "", int size = 0, decimal minCost = 0, decimal maxCost = 10000000, int page = 1, int count = 100)
 		{
 			var result = _productRepo.Where(product =>
-				((product.Name == name & product.Category == category & product.Size == size) |
-				(product.Name == name & product.Category == category & size == 0) |
-				(product.Name == name & category == "" & size == 0) |
+				((product.Name.ToLower().Contains(name.ToLower()) & product.Category == category & product.Size == size) |
+				(product.Name.ToLower().Contains(name.ToLower()) & product.Category == category & size == 0) |
+				(product.Name.ToLower().Contains(name.ToLower()) & category == "" & size == 0) |
 				(name == "" & product.Category == category & size == 0) |
 				(name == "" & category == "" & product.Size == size) |
 				(name == "" & category == "" & size == 0)) &
@@ -79,7 +78,7 @@ namespace WebSite.Controllers
 
 		[HttpPatch]
 		[Route("product")]
-		[Authorize(Roles = "Seller, Admin")]
+		[Authorize(Roles = "Seller")]
 		public IResult Update([FromBody] Product product)
 		{
 			if (!_validationService.ValidateProduct(product))

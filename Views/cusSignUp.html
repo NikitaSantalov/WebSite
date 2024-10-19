@@ -2,7 +2,7 @@
 
 <html>
 <head>
-    <title>Sign In</title>
+    <title>Sign Up</title>
     <link href="/css/cusSignUp.css" rel="stylesheet" />
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -11,13 +11,22 @@
 </head>
 <body>
     <div class="mask">
-        <h3 class="text">Login</h3>
-        <input title="Login" class="input" id="email" type="email" />
+        <h3 class="text">Name</h3>
+        <input title="Name" class="input" id="name" type="text" />
+
+        <h3 class="text">Last name</h3>
+        <input title="Last name" class="input" id="last-name" type="text" />
+
+        <h3 class="text">Email</h3>
+        <input title="Email" class="input" id="email" type="email" />
+
+        <h3 class="text">Phone</h3>
+        <input title="Phone" class="input" id="phone" type="tel" />
 
         <h3 class="text">Password</h3>
-        <input title="Password" class="input" id="password" type="password"/><br/>
+        <input title="Password" class="input" id="password" type="password" /><br />
 
-        <input class="button" type="button" onclick="signUp()" value="Sign Up"/>
+        <input class="button" type="button" onclick="signUp()" value="Sign Up" />
     </div>
 
     <script src="/js/cusSignUp.js"></script>
