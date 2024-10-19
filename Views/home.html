@@ -1,0 +1,76 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8" />
+    <title>Home</title>
+    <link href="/css/home.css" rel="stylesheet" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <header>
+        <nav>
+            <ul class="header-list">
+                <li class="header-item">
+                    <a><img title="Account" class="header-icon" src="img/account.png" /></a>
+                </li>
+
+                <li class="header-item">
+                    <a class="item" href="#">About</a>
+                </li>
+
+                <li class="header-item">
+                    <a class="item" href="#">New</a>
+                </li>
+
+                <li class="header-item">
+                    <a class="item" href="#">Favorite</a>
+                </li>
+
+                <li class="header-item">
+                    <a class="item" href="#">Season</a>
+                </li>
+
+                <li class="header-item">
+                    <a><img title="Shopping cart" class="header-icon" src="img/cart.png" /></a>
+                </li>
+            </ul>
+        </nav>
+    </header>
+
+    <div class="container">
+        <div class="parameters">
+            <div class="parameters-search">
+                <input title="Search" class="search-input" type="text" id="product-name" />
+
+                <button title="Search" type="button" class="search-button" id="cost-button">
+                    <img class="search" src="img/search.png" />
+                </button>
+            </div>
+
+            <div class="parameters-category">
+                <select title="Category" class="category-select" id="category">
+                    <option class="category-item" value="Спорт">Спорт</option>
+                    <option class="category-item" value="Мода">Мода</option>
+                    <option class="category-item" value="Спорт">Спорт</option>
+                    <option class="category-item" value="Мода">Мода</option>
+                    <option class="category-item" value="Спорт">Спорт</option>
+                    <option class="category-item" value="Мода">Мода</option>
+                </select>
+            </div>
+
+            <div class="parameters-cost">
+                <p class="cost">1000₽   &mdash;   5000₽</p>
+                <input class="cost-input" type="range" id="cost" />
+            </div>
+        </div>
+
+        <div id="product-list"></div>
+    </div>
+
+    <script src="js/home.js"></script>
+</body>
+</html>

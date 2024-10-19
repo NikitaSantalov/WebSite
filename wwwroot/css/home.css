@@ -1,0 +1,172 @@
+﻿
+body {
+	background-color: #9E7BB2;
+	width: 100%;
+	margin: 0px;
+	font-family: "Roboto", sans-serif;
+}
+
+a {
+	text-decoration: none;
+}
+
+header {
+	padding: 10px 20%;
+	margin: 0px;
+	background-color: #48608D;
+}
+
+select option:hover,
+select option:focus,
+select option:active,
+select option:checked {
+	background: linear-gradient(#48608D,#48608D);
+	background-color: #48608D !important;
+	color: white;
+}
+
+.container {
+	padding: 0px 20%;
+}
+
+::selection {
+	background-color: #48608D;
+	color: white;
+}
+
+.header-list {
+	display: flex;
+	justify-content: space-between;
+	padding-inline-start: 0px;
+	align-items: center;
+}
+
+.header-item {
+	display: inline;
+}
+
+.header-item:hover {
+	cursor: pointer;
+}
+
+.item {
+	color: white;
+	font-size: 24px;
+}
+
+.header-icon {
+	width: 50px;
+	height: 50px;
+}
+
+.parameters {
+	margin-top: 50px;
+	display: flex;
+	justify-content: space-around;
+	text-align: center;
+	align-items: center;
+	flex-wrap: wrap;
+}
+
+.parameters-search {
+	width: 400px;
+	display: flex;
+	align-items: center;
+}
+
+.category-select {
+	width: 250px;
+	height: 40px;
+	text-align: center;
+	border-radius: 5px;
+	margin-right: 20px;
+	margin-top: 20px;
+	font-size: 18px;
+}
+
+.category-select:focus {
+	outline: none;
+}
+
+.cost-input {
+	width: 200px;
+	accent-color: #48608D;
+}
+
+.cost {
+	text-align: center;
+	font-size: 24px;
+	color: white;
+}
+
+.parameters-search {
+	width: 100%;
+}
+
+.search-input {
+	width: 100%;
+	height: 40px;
+	border-radius: 15px;
+	margin-right: 5px;
+	padding: 0px 10px;
+	border: none;
+	font-size: 24px;
+}
+
+.search-input:focus {
+	outline: none;
+}
+
+.search-button {
+	background-color: #9E7BB2;
+	border: none;
+}
+
+.search-button:hover {
+	cursor: pointer;
+}
+
+.search {
+	width: 50px;
+	height: 50px;
+}
+
+@media (max-width: 1200px) {
+	header {
+		padding: 10px 5%;
+	}
+
+	.container {
+		padding: 0px 5%;
+	}
+}
+
+@media (max-width: 600px) {
+	.item {
+		font-size: 16px;
+	}
+
+	.header-icon {
+		width: 35px;
+		height: 35px;
+	}
+
+	.search {
+		width: 35px;
+		height: 35px;
+	}
+
+	.parameters-category {
+		width: 200px;
+	}
+
+	.category-select {
+		width: 200px;
+		height: 30px;
+		font-size: 16px;
+	}
+
+	.cost {
+		font-size: 18px;
+	}
+}
