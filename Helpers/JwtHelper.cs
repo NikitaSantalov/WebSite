@@ -1,6 +1,11 @@
-﻿using System.IdentityModel.Tokens.Jwt;
+﻿using System;
+using System.Collections.Generic;
+using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
+using System.Security.Claims;
 using Microsoft.Extensions.Primitives;
+using Microsoft.IdentityModel.Tokens;
+using WebSite.Options;
 
 namespace WebSite.Helpers
 {
@@ -13,7 +18,7 @@ namespace WebSite.Helpers
             _token = token;
         }
 
-        public static JwtHelper GetJwt(StringValues authorization)
+        public static JwtHelper? GetJwt(StringValues authorization)
         {
 			var handler = new JwtSecurityTokenHandler();
 
@@ -24,7 +29,20 @@ namespace WebSite.Helpers
 				return new JwtHelper(token);
 			}
 
-            return new JwtHelper(new JwtSecurityToken());
+            return null;
+		}
+
+        public static string CreateToken(ICollection<Claim> claims)
+        {
+			var jwt = new JwtSecurityToken(
+				issuer: AuthOptions.ISSUER,
+				audience: AuthOptions.AUDIENCE,
+				claims: claims,
+				expires: DateTime.UtcNow.Add(TimeSpan.FromDays(7)),
+				signingCredentials: new SigningCredentials(AuthOptions.GetSymmetricSecurityKey(), SecurityAlgorithms.HmacSha256));
+
+			var handler = new JwtSecurityTokenHandler();
+			return handler.WriteToken(jwt);
 		}
 
         public string GetValue(string type)

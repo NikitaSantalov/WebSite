@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using WebSite.Models;
@@ -18,26 +19,26 @@ namespace WebSite.Repositoryes
 			_context = context;
 		}
 
-		public T? Get(int id)
+		public async Task<T?> Get(int id)
 		{
-			return _context.Set<T>().AsNoTracking().Where(i => i.Id == id).FirstOrDefault();
+			return await _context.Set<T>().AsNoTracking().Where(i => i.Id == id).FirstOrDefaultAsync();
 		}
 
-		public IEnumerable<T> Where(Expression<Func<T, bool>> predicate)
+		public async Task<IEnumerable<T>> Where(Expression<Func<T, bool>> predicate)
 		{
-			return _context.Set<T>().AsNoTracking().Where(predicate);
+			return await _context.Set<T>().AsNoTracking().Where(predicate).ToListAsync();
 		}
 
-		public IResult Add(T item)
+		public async Task<IResult> Add(T item)
 		{
 			_context.Set<T>().Add(item);
-			_context.SaveChanges();
+			await _context.SaveChangesAsync();
 
 			return Results.Ok();
 		}
 
 
-		public IResult Update(T item)
+		public async Task<IResult> Update(T item)
 		{
 			var res = _context.Set<T>().AsNoTracking().Where(i => i.Id == item.Id).FirstOrDefault();
 
@@ -47,12 +48,12 @@ namespace WebSite.Repositoryes
 			}
 
 			_context.Set<T>().Update(item);
-			_context.SaveChanges();
+			await _context.SaveChangesAsync();
 
 			return Results.Ok();
 		}
 
-		public IResult Remove(int id)
+		public async Task<IResult> Remove(int id)
 		{
 			var item = _context.Set<T>().Where(i => i.Id == id).FirstOrDefault();
 
@@ -62,7 +63,7 @@ namespace WebSite.Repositoryes
 			}
 
 			_context.Set<T>().Remove(item);
-			_context.SaveChanges();
+			await _context.SaveChangesAsync();
 
 			return Results.Ok();
 		}

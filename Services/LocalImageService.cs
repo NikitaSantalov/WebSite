@@ -16,9 +16,9 @@ namespace WebSite.Services
 			_config = config;
 		}
 
-		public byte[] GetImage(string path)
+		public async Task<byte[]> GetImage(string path)
 		{
-			return File.ReadAllBytes($"{_config.GetImagesPath()}/{path}");
+			return await File.ReadAllBytesAsync($"{_config.GetImagesPath()}/{path}");
 		}
 
 		public async void LoadImage(string path, IFormFile formFile)

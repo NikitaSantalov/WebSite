@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Security.Claims;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -33,16 +34,18 @@ namespace WebSite.Controllers
 
 		[HttpGet]
 		[Route("product")]
-		public IResult Get(string name = "", string category = "", int size = 0, decimal minCost = 0, decimal maxCost = 10000000, int page = 1, int count = 100)
+		public async Task<IResult> Get(string name = "", string category = "", int size = 0, decimal minCost = 0, decimal maxCost = 10000000, int page = 1, int count = 100)
 		{
-			var result = _productRepo.Where(product =>
+			var result = await _productRepo.Where(product =>
 				((product.Name.ToLower().Contains(name.ToLower()) & product.Category == category & product.Size == size) |
 				(product.Name.ToLower().Contains(name.ToLower()) & product.Category == category & size == 0) |
 				(product.Name.ToLower().Contains(name.ToLower()) & category == "" & size == 0) |
 				(name == "" & product.Category == category & size == 0) |
 				(name == "" & category == "" & product.Size == size) |
 				(name == "" & category == "" & size == 0)) &
-				(minCost <= product.Cost & product.Cost <= maxCost)).Skip((page - 1) * count).Take(count).Distinct();
+				(minCost <= product.Cost & product.Cost <= maxCost));
+
+			result = result.Skip((page - 1) * count).Take(count).Distinct();
 
 			if (result.Count() == 0)
 			{
@@ -55,7 +58,7 @@ namespace WebSite.Controllers
 		[HttpPost]
 		[Route("product")]
 		[Authorize(Roles = "Seller")]
-		public IResult Add([FromBody] Product product)
+		public async Task<IResult> Add([FromBody] Product product)
 		{
 			if (!_validationService.ValidateProduct(product))
 			{
@@ -71,15 +74,20 @@ namespace WebSite.Controllers
 
 			var helper = JwtHelper.GetJwt(HttpContext.Request.Headers.Authorization);
 
+			if (helper == null)
+			{
+				return Results.BadRequest();
+			}
+
 			product.SellerId = int.Parse(helper.GetValue("Id"));
 
-			return _productRepo.Add(product);
+			return await _productRepo.Add(product);
 		}
 
 		[HttpPatch]
 		[Route("product")]
 		[Authorize(Roles = "Seller")]
-		public IResult Update([FromBody] Product product)
+		public async Task<IResult> Update([FromBody] Product product)
 		{
 			if (!_validationService.ValidateProduct(product))
 			{
@@ -88,21 +96,32 @@ namespace WebSite.Controllers
 
 			var helper = JwtHelper.GetJwt(HttpContext.Request.Headers.Authorization);
 
+			if (helper == null)
+			{
+				return Results.BadRequest();
+			}
+
 			product.SellerId = int.Parse(helper.GetValue("Id"));
 
-			return _productRepo.Update(product);
+			return await _productRepo.Update(product);
 		}
 
 		[HttpDelete]
 		[Route("product")]
 		[Authorize(Roles = "Seller, Admin")]
-		public IResult Delete(int id)
+		public async Task<IResult> Delete(int id)
 		{
 			var helper = JwtHelper.GetJwt(HttpContext.Request.Headers.Authorization);
+
+			if (helper == null)
+			{
+				return Results.BadRequest();
+			}
+
 			string role = helper.GetValue(ClaimTypes.Role);
 			int sellerId = int.Parse(helper.GetValue("Id"));
 
-			var product = _productRepo.Get(id);
+			var product = await _productRepo.Get(id);
 
 			if (product == null)
 			{
@@ -114,7 +133,7 @@ namespace WebSite.Controllers
 				return Results.Unauthorized();
 			}
 
-			return _productRepo.Remove(id);
+			return await _productRepo.Remove(id);
 		}
 	}
 }

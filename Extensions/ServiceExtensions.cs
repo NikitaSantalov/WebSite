@@ -25,6 +25,7 @@ namespace WebSite.Extensions
 		public static void AddDtoServices(this IServiceCollection services)
 		{
 			services.AddTransient<IDtoService<Seller, SellerDto>, SellerDtoService>();
+			services.AddTransient<IDtoService<Customer, CustomerDto>, CustomerDtoService>();
 		}
 
 		public static void AddServices(this IServiceCollection services)

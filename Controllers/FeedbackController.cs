@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Security.Claims;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -25,9 +26,9 @@ namespace WebSite.Controllers
 
 		[HttpGet]
 		[Route("feedback")]
-		public IResult GetAll(int productId)
+		public async Task<IResult> GetAll(int productId)
 		{
-			var result = new List<Feedback>(_feedbackRepo.Where(f => f.ProductId == productId));
+			var result = new List<Feedback>(await _feedbackRepo.Where(f => f.ProductId == productId));
 
 			if (result.Count == 0)
 			{
@@ -40,66 +41,91 @@ namespace WebSite.Controllers
 		[HttpPost]
 		[Route("feedback")]
 		[Authorize(Roles = "Customer")]
-		public IResult AddFeedback([FromBody] Feedback feedback)
+		public async Task<IResult> AddFeedback([FromBody] Feedback feedback)
 		{
 			if (!_validationService.ValidateFeedback(feedback))
 			{
 				return Results.BadRequest();
 			}
 
-			feedback.CustomerId = GetCustomerId();
+			var helper = JwtHelper.GetJwt(HttpContext.Request.Headers.Authorization);
 
-			return _feedbackRepo.Add(feedback);
+			if (helper == null)
+			{
+				return Results.BadRequest();
+			}
+
+			feedback.CustomerId = int.Parse(helper.GetValue("Id"));
+
+			return await _feedbackRepo.Add(feedback);
 		}
 
 		[HttpPatch]
 		[Route("feedback")]
 		[Authorize(Roles = "Customer")]
-		public IResult UpdateFeedback([FromBody] Feedback feedback)
+		public async Task<IResult> UpdateFeedback([FromBody] Feedback feedback)
 		{
 			if (!_validationService.ValidateFeedback(feedback))
 			{
 				return Results.BadRequest();
 			}
 
-			var feed = _feedbackRepo.Get(feedback.Id);
+			var helper = JwtHelper.GetJwt(HttpContext.Request.Headers.Authorization);
 
-			if (feed != null && AuthorizeCustomer(feed.CustomerId))
+			if (helper == null)
+			{
+				return Results.BadRequest();
+			}
+
+			int customerId = int.Parse(helper.GetValue("Id"));
+			var feed = await _feedbackRepo.Get(feedback.Id);
+
+			if (feed == null)
+			{
+				return Results.NotFound();
+			}
+
+			if (customerId != feed.CustomerId)
 			{
 				return Results.Unauthorized();
 			}
 
-			return _feedbackRepo.Update(feedback);
+			return await _feedbackRepo.Update(feedback);
 		}
 
 		[HttpDelete]
 		[Route("feedback")]
 		[Authorize(Roles = "Customer, Admin")]
-		public IResult DeleteFeedback(int id)
+		public async Task<IResult> DeleteFeedback(int id)
 		{
-			var feedback = _feedbackRepo.Get(id);
+			var helper = JwtHelper.GetJwt(HttpContext.Request.Headers.Authorization);
 
-			if (feedback != null && !AuthorizeCustomer(feedback.CustomerId))
+			if (helper == null)
+			{
+				return Results.BadRequest();
+			}
+
+			string role = helper.GetValue(ClaimTypes.Role);
+			int customerId = 0;
+			
+			if (role == "Customer")
+			{
+				customerId = int.Parse(helper.GetValue("Id"));
+			}
+			
+			var feedback = await _feedbackRepo.Get(id);
+
+			if (feedback == null)
+			{
+				return Results.NotFound();
+			}
+
+			if (role == "Customer" & customerId != feedback.CustomerId)
 			{
 				return Results.Unauthorized();
 			}
 
-			return _feedbackRepo.Remove(id);
-		}
-
-		private bool AuthorizeCustomer(int id)
-		{
-			var helper = JwtHelper.GetJwt(HttpContext.Request.Headers.Authorization);
-			string role = helper.GetValue(ClaimTypes.Role);
-			int customerId = int.Parse(helper.GetValue("Id"));
-
-			return role == "Admin" | role == "Customer" & customerId == id;
-		}
-
-		private int GetCustomerId()
-		{
-			var helper = JwtHelper.GetJwt(HttpContext.Request.Headers.Authorization);
-			return int.Parse(helper.GetValue("Id"));
+			return await _feedbackRepo.Remove(id);
 		}
 	}
 }

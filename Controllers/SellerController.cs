@@ -13,6 +13,8 @@ using System.Linq;
 using WebSite.Models.Dto;
 using WebSite.Helpers;
 using WebSite.Services.Interfaces;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace WebSite.Controllers
 {
@@ -39,31 +41,6 @@ namespace WebSite.Controllers
 			HttpContext.Response.WriteAsync("<h1>Manufacturer Sign in</h1>");
 		}
 
-		[HttpGet]
-		[Route("/api/seller")]
-		public IResult Get(int id = -1, int page = 1, int count = 100)
-		{
-			if (page <= 0 | count <= 0)
-			{
-				return Results.BadRequest();
-			}
-
-			var helper = JwtHelper.GetJwt(HttpContext.Request.Headers.Authorization);
-			var role = helper.GetValue(ClaimTypes.Role);
-
-			if (role == "Admin")
-			{
-				return GetForAdmin(id, page, count);
-			}
-			else if (role == "Seller")
-			{
-				return GetForSeller(helper, id, page, count);
-			}
-			else
-			{
-				return GetForOther(id, page, count);
-			}
-		}
 
 		[HttpGet]
 		[Route("sign-up")]
@@ -72,31 +49,53 @@ namespace WebSite.Controllers
 			HttpContext.Response.WriteAsync("<h1>Manufacturer Sign up</h1>");
 		}
 
+		[HttpGet]
+		[Route("/api/seller")]
+		public async Task<IResult> Get(int id = -1, int page = 1, int count = 100)
+		{
+			if (page <= 0 | count <= 0)
+			{
+				return Results.BadRequest();
+			}
+
+			var castomers = await _sellerRepo.Where(s => s.Id == id);
+
+			var res = castomers.Skip((page - 1) * count).Take(count).Select(_dtoService.ToDto);
+
+			return Results.Json(res);
+		}
+
 		[HttpPost]
 		[Route("account")]
-		public IResult CreateAccount([FromBody] Seller seller)
+		public async Task<IResult> CreateAccount([FromBody] Seller seller)
 		{
 			if (!_validationService.ValidateSeller(seller))
 			{
 				return Results.BadRequest();
 			}
 
-			var res = _sellerRepo.Where(c => c.Email == seller.Email).FirstOrDefault();
+			var results = await _sellerRepo.Where(c => c.Email == seller.Email);
+			var res = results.FirstOrDefault();
 
 			if (res != null)
 			{
 				return Results.Conflict("User with this email already exists");
 			}
 
-			return _sellerRepo.Add(seller);
+			return await _sellerRepo.Add(seller);
 		}
 
 		[HttpDelete]
 		[Route("account")]
 		[Authorize(Roles = "Seller, Admin")]
-		public IResult DeleteAccount(int id = -1)
+		public async Task<IResult> DeleteAccount(int id = -1)
 		{
 			var helper = JwtHelper.GetJwt(HttpContext.Request.Headers.Authorization);
+
+			if (helper == null)
+			{
+				return Results.BadRequest();
+			}
 
 			if (helper.GetValue(ClaimTypes.Role) == "Seller")
 			{
@@ -107,19 +106,20 @@ namespace WebSite.Controllers
 				return Results.BadRequest();
 			}
 
-			return _sellerRepo.Remove(id);
+			return await _sellerRepo.Remove(id);
 		}
 
 		[HttpPost]
 		[Route("sign-in")]
-		public IResult SignIn([FromBody] UserDto user)
+		public async Task<IResult> SignIn([FromBody] UserDto user)
 		{
 			if (!_validationService.ValidateUser(user))
 			{
 				return Results.BadRequest();
 			}
 
-			var seller = _sellerRepo.Where(s => s.Email == user.Email & s.Password == user.Password).FirstOrDefault();
+			var sellers = await _sellerRepo.Where(s => s.Email == user.Email & s.Password == user.Password);
+			var seller = sellers.FirstOrDefault();
 
 			if (seller == null)
 			{
@@ -132,76 +132,7 @@ namespace WebSite.Controllers
 				new Claim("Id", $"{seller.Id}")
 			};
 
-			var jwt = new JwtSecurityToken(
-				issuer: AuthOptions.ISSUER,
-				audience: AuthOptions.AUDIENCE,
-				claims: claims,
-				expires: DateTime.UtcNow.Add(TimeSpan.FromDays(7)),
-				signingCredentials: new SigningCredentials(AuthOptions.GetSymmetricSecurityKey(), SecurityAlgorithms.HmacSha256));
-
-			var handler = new JwtSecurityTokenHandler();
-			var token = handler.WriteToken(jwt);
-
-			return Results.Ok("Bearer " + token);
-		}
-
-		private IResult GetForAdmin(int id, int page, int count)
-		{
-			if (id >= 0)
-			{
-				return Results.Json(_sellerRepo.Get(id));
-			}
-			else
-			{
-				return Results.Json(_sellerRepo.Where(s => true).Skip((page - 1) * count).Take(count));
-			}
-		}
-
-		private IResult GetForSeller(JwtHelper helper, int id, int page, int count)
-		{
-			var sellerId = int.Parse(helper.GetValue("Id"));
-
-			if (id >= 0)
-			{
-				var seller = _sellerRepo.Get(id);
-
-				if (seller == null)
-				{
-					return Results.NotFound();
-				}
-
-				if (sellerId == seller.Id)
-				{
-					return Results.Json(seller);
-				}
-				else
-				{
-					return Results.Json(_dtoService.ToDto(seller));
-				}
-			}
-			else
-			{
-				return Results.Json(_sellerRepo.Where(s => true).Select(_dtoService.ToDto).Skip((page - 1) * count).Take(count));
-			}
-		}
-
-		private IResult GetForOther(int id, int page, int count)
-		{
-			if (id >= 0)
-			{
-				var seller = _sellerRepo.Get(id);
-
-				if (seller == null)
-				{
-					return Results.NotFound();
-				}
-
-				return Results.Json(_dtoService.ToDto(seller));
-			}
-			else
-			{
-				return Results.Json(_sellerRepo.Where(s => true).Select(_dtoService.ToDto).Skip((page - 1) * count).Take(count));
-			}
+			return Results.Ok("Bearer " + JwtHelper.CreateToken(claims));
 		}
 	}
 }

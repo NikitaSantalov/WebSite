@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using WebSite.Helpers;
@@ -52,28 +53,33 @@ namespace WebSite.Controllers
 
 		[HttpGet]
 		[Route("image")]
-		public IResult Get(int id)
+		public async Task<IResult> Get(int id)
 		{
-			var image = _imageRepo.Get(id);
+			var image = await _imageRepo.Get(id);
 
 			if (image == null)
 			{
 				return Results.NotFound();
 			}
 
-			return Results.Bytes(_imageService.GetImage(image.ImagePath));
+			return Results.Bytes(await _imageService.GetImage(image.ImagePath));
 		}
 
 		[HttpPost]
 		[Route("image")]
 		[Authorize(Roles = "Seller")]
-		public IResult LoadImage([FromBody] ImageDto imageDto)
+		public async Task<IResult> LoadImage([FromBody] ImageDto imageDto)
 		{
 			var helper = JwtHelper.GetJwt(HttpContext.Request.Headers.Authorization);
 
+			if (helper == null)
+			{
+				return Results.BadRequest();
+			}
+
 			int sellerId = int.Parse(helper.GetValue("Id"));
 
-			var product = _productRepo.Get(imageDto.ProductId);
+			var product = await _productRepo.Get(imageDto.ProductId);
 
 			if (product == null)
 			{
@@ -92,7 +98,7 @@ namespace WebSite.Controllers
 				productImage.ImagePath = $"{sellerId}/{imageDto.ProductId}/{file.FileName}";
 
 				_imageService.LoadImage(productImage.ImagePath, file);
-				_imageRepo.Add(productImage);
+				await _imageRepo.Add(productImage);
 			}
 
 			return Results.Ok();
@@ -101,9 +107,9 @@ namespace WebSite.Controllers
 		[HttpDelete]
 		[Route("image")]
 		[Authorize(Roles = "Seller, Admin")]
-		public IResult Delete(int id)
+		public async Task<IResult> Delete(int id)
 		{
-			var image = _imageRepo.Get(id);
+			var image = await _imageRepo.Get(id);
 
 			if (image == null)
 			{
@@ -111,7 +117,7 @@ namespace WebSite.Controllers
 			}
 
 			_imageService.DeleteImage(image.ImagePath);
-			_imageRepo.Remove(id);
+			await _imageRepo.Remove(id);
 
 			return Results.Ok();
 		}

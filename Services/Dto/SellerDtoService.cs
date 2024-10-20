@@ -3,6 +3,7 @@ using WebSite.Models.Dto;
 using WebSite.Repositoryes.Interfaces;
 using WebSite.Services.Interfaces;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace WebSite.Services.Dto
 {
@@ -14,9 +15,10 @@ namespace WebSite.Services.Dto
 			_sellerRepo = sellerRepo;
 		}
 
-		public Seller? FromDto(SellerDto dto)
+		public async Task<Seller?> FromDto(SellerDto dto)
 		{
-			return _sellerRepo.Where(s => s.Name == dto.Name & s.Email == dto.Email & s.Phone == dto.Phone).FirstOrDefault();
+			var sellers = await _sellerRepo.Where(s => s.Name == dto.Name & s.Email == dto.Email & s.Phone == dto.Phone);
+			return sellers.FirstOrDefault();
 		}
 
 		public SellerDto ToDto(Seller seller)

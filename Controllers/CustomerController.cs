@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Security.Claims;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -27,20 +28,32 @@ namespace WebSite.Controllers
 		private readonly IRepository<Customer> _customerRepo;
 		private readonly IValidationService _validationService;
 		private readonly IConfiguration _config;
+		private readonly IDtoService<Customer, CustomerDto> _dtoService;
 
-		public CustomerController(IRepository<Customer> repository, IValidationService validationService, IConfiguration config)
+		public CustomerController(IRepository<Customer> repository, 
+			IValidationService validationService, 
+			IConfiguration config, IDtoService<Customer, CustomerDto> dtoService)
 		{
 			_customerRepo = repository;
 			_validationService = validationService;
 			_config = config;
+			_dtoService = dtoService;
 		}
 
 		[HttpGet]
 		[Route("/api/customer")]
-		[Authorize(Roles = "Admin")]
-		public IResult Get(int page = 1, int count = 100)
+		public async Task<IResult> Get(int id = -1, int page = 1, int count = 100)
 		{
-			return Results.Json(_customerRepo.Where(s => true).Skip((page - 1) * count).Take(count));
+			if (id <= 0)
+			{
+				return Results.BadRequest();
+			}
+
+			var castomers = await _customerRepo.Where(s => s.Id == id);
+
+			var res = castomers.Skip((page - 1) * count).Take(count).Select(_dtoService.ToDto);
+
+			return Results.Json(res);
 		}
 
 		[HttpGet]
@@ -59,7 +72,7 @@ namespace WebSite.Controllers
 
 		[HttpPost]
 		[Route("sign-in")]
-		public IResult SignIn([FromBody] UserDto user)
+		public async Task<IResult> SignIn([FromBody] UserDto user)
 		{
 			Customer? customer = null;
 
@@ -68,9 +81,15 @@ namespace WebSite.Controllers
 			if (!StringValues.IsNullOrEmpty(authorization))
 			{
 				var helper = JwtHelper.GetJwt(authorization);
+
+				if (helper == null)
+				{
+					return Results.BadRequest();
+				}
+
 				int id = int.Parse(helper.GetValue("Id"));
 
-				customer = _customerRepo.Get(id);
+				customer = await _customerRepo.Get(id);
 			}
 			else if (!_validationService.ValidateUser(user))
 			{
@@ -78,7 +97,8 @@ namespace WebSite.Controllers
 			}
 			else
 			{
-				customer = _customerRepo.Where(c => c.Email == user.Email & c.Password == user.Password).FirstOrDefault();
+				var customers = await _customerRepo.Where(c => c.Email == user.Email & c.Password == user.Password);
+				customer = customers.FirstOrDefault();
 			}
 
 			if (customer == null)
@@ -91,46 +111,41 @@ namespace WebSite.Controllers
 				new Claim(ClaimTypes.Role, "Customer"),
 				new Claim("Id", $"{customer.Id}")
 			};
-
-			var jwt = new JwtSecurityToken(
-				issuer: AuthOptions.ISSUER,
-				audience: AuthOptions.AUDIENCE,
-				claims: claims,
-				expires: DateTime.UtcNow.Add(TimeSpan.FromMinutes(14)),
-				signingCredentials: new SigningCredentials(AuthOptions.GetSymmetricSecurityKey(), SecurityAlgorithms.HmacSha256));
-
-
-			var handler = new JwtSecurityTokenHandler();
-			var token = handler.WriteToken(jwt);
 			
-			return Results.Ok("Bearer " + token);
+			return Results.Ok("Bearer " + JwtHelper.CreateToken(claims));
 		}
 
 		[HttpPost]
 		[Route("account")]
-		public IResult CreateAccount([FromBody] Customer customer)
+		public async Task<IResult> CreateAccount([FromBody] Customer customer)
 		{
 			if (!_validationService.ValidateCustomer(customer))
 			{
 				return Results.BadRequest();
 			}
 
-			var res = _customerRepo.Where(c => c.Email == customer.Email).FirstOrDefault();
+			var results = await _customerRepo.Where(c => c.Email == customer.Email);
+			var res = results.FirstOrDefault();
 
 			if (res != null)
 			{
 				return Results.Conflict("User with this email already exists");
 			}
 
-			return _customerRepo.Add(customer);
+			return await _customerRepo.Add(customer);
 		}
 
 		[HttpDelete]
 		[Route("account")]
 		[Authorize(Roles = "Customer, Admin")]
-		public IResult DeleteAccount(int id = -1)
+		public async Task<IResult> DeleteAccount(int id = -1)
 		{
 			var helper = JwtHelper.GetJwt(HttpContext.Request.Headers.Authorization);
+
+			if (helper == null)
+			{
+				return Results.BadRequest();
+			}
 
 			if (helper.GetValue(ClaimTypes.Role) == "Customer")
 			{
@@ -141,7 +156,7 @@ namespace WebSite.Controllers
 				return Results.BadRequest();
 			}
 
-			return _customerRepo.Remove(id);
+			return await _customerRepo.Remove(id);
 		}
 	}
 }
